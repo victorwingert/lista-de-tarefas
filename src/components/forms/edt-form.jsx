@@ -19,22 +19,22 @@ const formSchema = z.object({
     date: z.string().min(1, { message: "A data não pode estar vazia." })
 })
 
-export function AddForm({ onSave, onAddTarefa }) {
+export function EdtForm({ tarefa, onEdit, onEditTarefa}) {
     const [date, setDate] = useState();
     const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
     const form = useForm({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            name: "",
-            price: "",
-            date: "",
+            name: tarefa.nome,
+            price: tarefa.custo.toString(),
+            date: tarefa.data,
         },
     })
 
     async function onSubmit(values) {
-        await onAddTarefa(values.name, values.price, values.date);
-        onSave();
+        await onEditTarefa(values.name, values.price, values.date);
+        onEdit();
     }
 
     return (
@@ -83,7 +83,7 @@ export function AddForm({ onSave, onAddTarefa }) {
                                             )}
                                         >
                                             <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {date ? format(date, "dd/MM/yyyy") : <span>Selecione uma data</span>}
+                                            {date ? format(date, "dd/MM/yyyy") : <span>{tarefa.data}</span>}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0">
@@ -104,7 +104,7 @@ export function AddForm({ onSave, onAddTarefa }) {
                         </FormItem>
                     )}
                 />
-                <Button type="submit">Incluir</Button>
+                <Button type="submit">Editar</Button>
             </form>
         </Form>
     );

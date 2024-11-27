@@ -1,32 +1,39 @@
-import { Input } from "./components/ui/input";
 import { Button } from "./components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./components/ui/table";
-import { PlusCircle, CalendarIcon, EditIcon } from "lucide-react";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "./components/ui/dialog";
-import { Label } from "./components/ui/label";
-import { DialogClose } from "@radix-ui/react-dialog";
-import { Popover, PopoverTrigger, PopoverContent } from "./components/ui/popover";
-import { Calendar } from "./components/ui/calendar";
-import { useEffect, useState, useRef, useReducer } from "react";
+import { PlusCircle } from "lucide-react";
+import { Dialog, DialogContent } from "./components/ui/dialog";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
 import { api } from "./services/api";
 import { AddForm } from "./components/forms/registration-form.jsx"
+import { EdtForm } from "./components/forms/edt-form";
 
 export function App() {
-  const [open, setOpen] = useState(false);
+  const [openAdd, setOpenAdd] = useState(false);
+  const [openEdt, setOpenEdt] = useState(false);
+  const [tarefas, setTarefas] = useState([]);
+  const [tarefaAtual, setTarefaAtual] = useState(null);
 
   const handleCloseDialog = () => {
-    setOpen(false)
+    setOpenAdd(false)
+    setOpenEdt(false)
   }
 
-  const [date, setDate] = useState();
-  const [tarefas, setTarefas] = useState([]);
+  const handleEditClick = (tarefa) => {
+    setTarefaAtual(tarefa)
+    setOpenEdt(true)
+  }
 
   async function getTarefas() {
     const tarefasFromApi = await api.get('/tarefas')
 
     setTarefas(tarefasFromApi.data)
+  }
+
+  async function deleteTarefas(id) {
+    await api.delete(`/tarefas/${id}`)
+
+    getTarefas()
   }
 
   useEffect(() => {
@@ -41,7 +48,6 @@ export function App() {
         <Table>
           <TableHeader>
             <TableHead className="text-center">ID</TableHead>
-            <TableHead className="text-center">Ordem</TableHead>
             <TableHead className="text-center">Nome</TableHead>
             <TableHead className="text-center">Custo</TableHead>
             <TableHead className="text-center">Data Limite</TableHead>
@@ -51,74 +57,13 @@ export function App() {
             {tarefas.map((tarefa) => (
               <TableRow key={tarefa.id}>
                 <TableCell className="text-center">{tarefa.id}</TableCell>
-                <TableCell className="text-center">{tarefa.ordem}</TableCell>
                 <TableCell className="text-center">{tarefa.nome}</TableCell>
                 <TableCell className="text-center">{tarefa.custo}</TableCell>
                 <TableCell className="text-center">{tarefa.data}</TableCell>
                 <TableCell>
                   <div className="flex justify-center items-center gap-2">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button className="h-8 w-14">
-                          Editar
-                        </Button>
-                      </DialogTrigger>
-
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Edição de Tarefas</DialogTitle>
-                        </DialogHeader>
-
-                        <div className="border-t border-muted-foreground my-2 border-gray-200" />
-
-                        <form className="flex flex-col gap-4">
-                          <div className="grid gap-2">
-                            <Label htmlFor="name">Nome</Label>
-                            <Input className="col-span-3 select-none" id="name" />
-                          </div>
-
-                          <div className="grid gap-2">
-                            <Label htmlFor="price">Custo</Label>
-                            <Input className="col-span-3" id="price" />
-                          </div>
-
-                          <div className="grid items-center text-left gap-2">
-                            <Label htmlFor="date">Data</Label>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant={"outline"}
-                                  className={cn(
-                                    "col-span-3 justify-start text-left font-normal",
-                                    !date && "text-muted-foreground"
-                                  )}
-                                >
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {date ? format(date, "PPP") : <span></span>}
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                  mode="single"
-                                  selected={date}
-                                  onSelect={setDate}
-                                  initialFocus
-                                />
-                              </PopoverContent>
-                            </Popover>
-                          </div>
-
-                          <DialogFooter>
-                            <DialogClose asChild>
-                              <Button type="button" variant="outline">Cancelar</Button>
-                            </DialogClose>
-                            <Button type="submit">Salvar</Button>
-                          </DialogFooter>
-                        </form>
-
-                      </DialogContent>
-                    </Dialog>
-                    <Button variant="outline" className="h-8 w-14">
+                    <Button className="h-8 w-14" onClick={() => { setOpenEdt(true), handleEditClick(tarefa) }}>Editar</Button>
+                    <Button variant="outline" className="h-8 w-14" onClick={() => deleteTarefas(tarefa.id)}>
                       Excluir
                     </Button>
                   </div>
@@ -129,12 +74,24 @@ export function App() {
         </Table>
       </div>
 
+      <Dialog open={openEdt} onOpenChange={setOpenEdt}>
+        <DialogContent>
+          <EdtForm tarefa={tarefaAtual} onEdit={handleCloseDialog} onEditTarefa={async (name, price, date) => {
+            await api.put(`/tarefas/${tarefaAtual.id}`, {
+              nome: name,
+              custo: price,
+              data: date ? format(new Date(date), "dd/MM/yyyy") : null,
+            });
+            await getTarefas();
+          }} />
+        </DialogContent>
+      </Dialog>
+
       <div className="flex items-center justify-between">
-        <Button onClick={() => setOpen(true)}>
-          <PlusCircle className="w-4 h-4 mr-2" />
-          Nova tarefa
+        <Button onClick={() => setOpenAdd(true)}>
+          <PlusCircle className="w-4 h-4 mr-2" />Incluir Registro
         </Button>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={openAdd} onOpenChange={setOpenAdd}>
           <DialogContent>
             <AddForm onSave={handleCloseDialog} onAddTarefa={async (name, price, date) => {
               await api.post('/tarefas', {
