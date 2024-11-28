@@ -1,6 +1,6 @@
 import { Button } from "./components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./components/ui/table";
-import { ArrowDown, ArrowUpIcon, DeleteIcon, Edit2Icon, Edit3Icon, PlusCircle, TrashIcon } from "lucide-react";
+import { ArrowDown, ArrowUpIcon, DeleteIcon, Edit2Icon, Edit3Icon, PlusCircle, TrashIcon, XCircleIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "./components/ui/dialog";
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
@@ -13,6 +13,7 @@ import { DialogDescription } from "@radix-ui/react-dialog";
 export function App() {
   const [openAdd, setOpenAdd] = useState(false);
   const [openEdt, setOpenEdt] = useState(false);
+  const [openDelete, setOpenDelete] = useState(false);
   const [tarefas, setTarefas] = useState([]);
   const [tarefaAtual, setTarefaAtual] = useState(null);
 
@@ -24,6 +25,11 @@ export function App() {
   const handleEditClick = (tarefa) => {
     setTarefaAtual(tarefa)
     setOpenEdt(true)
+  }
+
+  const handleEditClickDelete = (tarefa) => {
+    setTarefaAtual(tarefa)
+    setOpenDelete(true)
   }
 
   const handleMoveUp = async (tarefa) => {
@@ -78,29 +84,29 @@ export function App() {
     <div className="p-6 max-w-4xl mx-auto space-y-4">
       <h1 className="text-3xl font-bold">Tarefas</h1>
 
-      <div className="border-2 border-black rounded-lg p-0 ">
+      <div className="border-2 border-viridian rounded-lg">
         <Table>
           <TableHeader>
-            <TableRow className="border-b border-black">
-              <TableHead className="text-center font-bold">ID</TableHead>
-              <TableHead className="text-center font-bold">Nome</TableHead>
-              <TableHead className="text-center font-bold">Custo</TableHead>
-              <TableHead className="text-center font-bold">Data Limite</TableHead>
-              <TableHead className="text-center font-bold">Ordem</TableHead>
-              <TableHead className="text-center font-bold w-10"></TableHead>
+            <TableRow>
+              <TableHead className="text-center text-white bg-viridian rounded-tl">ID</TableHead>
+              <TableHead className="text-center font-bold text-white bg-viridian">Nome</TableHead>
+              <TableHead className="text-center font-bold text-white bg-viridian">Custo</TableHead>
+              <TableHead className="text-center font-bold text-white bg-viridian">Data Limite</TableHead>
+              <TableHead className="text-center font-bold text-white bg-viridian">Ordem</TableHead>
+              <TableHead className="text-center w-10 text-white bg-viridian rounded-tr"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {tarefas
               .sort((a, b) => a.ordem - b.ordem)
               .map((tarefa) => (
-                <TableRow key={tarefa.id} className={` border-b border-black text-center ${tarefa.custo >= 1000 ? 'bg-maize hover:bg-maize hover:bg-opacity-80' : ''}`}>
-                  <TableCell className="text-center">{tarefa.id}</TableCell>
+                <TableRow key={tarefa.id} className={`border-y-2 border-viridian text-center ${tarefa.custo >= 1000 ? 'bg-cambridge-blue hover:bg-cambridge-blue/80' : 'bg-azure-web hover:bg-azure-web/80'}`} >
+                  <TableCell className={`text-center font-bold ${tarefa.ordem === tarefas.length ? 'rounded-bl-sm' : ''}`}>{tarefa.id}</TableCell>
                   <TableCell className="text-center">{tarefa.nome}</TableCell>
                   <TableCell className="text-center">{tarefa.custo}</TableCell>
                   <TableCell className="text-center">{tarefa.data}</TableCell>
                   <TableCell className="text-center">{tarefa.ordem}</TableCell>
-                  <TableCell>
+                  <TableCell className={`${tarefa.ordem === tarefas.length ? 'rounded-br-sm' : ''}`}>
                     <div className="flex justify-center items-center gap-3">
                       <div className="flex justify-center items-center gap-1">
                         <Button className="h-8 w-8 rounded-full bg-redwood hover:bg-redwood hover:bg-opacity-80" onClick={() => { handleMoveUp(tarefa) }} disabled={tarefa.ordem === 1}>
@@ -114,7 +120,7 @@ export function App() {
                         <Button className="h-8 w-8 rounded-full bg-blue-gray hover:bg-blue-gray hover:bg-opacity-80" onClick={() => { setOpenEdt(true), handleEditClick(tarefa) }}>
                           <Edit2Icon></Edit2Icon>
                         </Button>
-                        <Button className="h-8 w-8 rounded-full bg-vermilion hover:bg-vermilion hover:bg-opacity-80" onClick={() => deleteTarefas(tarefa.id)}>
+                        <Button className="h-8 w-8 rounded-full bg-vermilion hover:bg-vermilion hover:bg-opacity-80" onClick={() => { setOpenDelete(true), handleEditClickDelete(tarefa) }}>
                           <TrashIcon></TrashIcon>
                         </Button>
                       </div>
@@ -143,6 +149,23 @@ export function App() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={openDelete} onOpenChange={setOpenDelete}>
+        <DialogContent className="max-w-sm p-4">
+          <VisuallyHidden>
+            <DialogTitle></DialogTitle>
+            <DialogDescription></DialogDescription>
+          </VisuallyHidden>
+          <div className="flex flex-col gap-3 ">
+            <h1 className="text-center text-lg font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Tem certeza que deseja excluir a tarefa?</h1>
+            <div className="flex justify-center items-center gap-1">
+              <Button onClick={() => { deleteTarefas(tarefaAtual.id), setOpenDelete(false) }} className="w-[65px] box-border px-4 py-2">Sim</Button>
+              <Button onClick={() => { setOpenDelete(false) }} variant="outline" className="w-[65px] box-border px-4 py-2">Não</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
       <div className="flex items-center justify-between">
         <Button onClick={() => setOpenAdd(true)}>
           <PlusCircle className="w-4 h-4 mr-2" />Incluir Registro
@@ -164,6 +187,6 @@ export function App() {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+    </div >
   );
 }

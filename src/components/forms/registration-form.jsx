@@ -33,8 +33,18 @@ export function AddForm({ onSave, onAddTarefa }) {
     })
 
     async function onSubmit(values) {
-        await onAddTarefa(values.name, values.price, values.date);
-        onSave();
+        try {
+            await onAddTarefa(values.name, values.price, values.date)
+            onSave()
+        } catch (error) {
+            if (error.response && error.response.status === 409) {
+                form.setError('name', {
+                    message: 'Esse nome de tarefa já está em uso. Tente outro.',
+                });
+            } else {
+                console.error('Erro ao enviar os dados:', error);
+            }
+        }
     }
 
     return (
@@ -104,7 +114,10 @@ export function AddForm({ onSave, onAddTarefa }) {
                         </FormItem>
                     )}
                 />
-                <Button type="submit">Incluir</Button>
+                <div className="flex gap-1">
+                    <Button type="submit" className="w-[65px] box-border px-4 py-2">Incluir</Button>
+                    <Button type="button" variant="outline" onClick={onSave} className="w-[65px] box-border px-4 py-2">Cancelar</Button>
+                </div>
             </form>
         </Form>
     );

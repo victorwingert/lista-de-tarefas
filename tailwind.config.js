@@ -15,6 +15,11 @@ module.exports = {
 			'pumpkin': '#ff8c42',
 			'vermilion': '#ff3c38',
 			'redwood': '#a23e48',
+			"viridian": "#6b9080ff",
+			"cambridge-blue": "#a4c3b2ff",
+			"mint-green": "#cce3deff",
+			"azure-web": "#eaf4f4ff",
+			"mint-cream": "#f6fff8ff",
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {

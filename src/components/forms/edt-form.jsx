@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { api } from "@/services/api";
 
 const formSchema = z.object({
     name: z.string().min(1, { message: "O nome não pode estar vazio." }),
@@ -19,7 +20,7 @@ const formSchema = z.object({
     date: z.string().min(1, { message: "A data não pode estar vazia." })
 })
 
-export function EdtForm({ tarefa, onEdit, onEditTarefa}) {
+export function EdtForm({ tarefa, onEdit, onEditTarefa }) {
     const [date, setDate] = useState();
     const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
@@ -33,8 +34,18 @@ export function EdtForm({ tarefa, onEdit, onEditTarefa}) {
     })
 
     async function onSubmit(values) {
-        await onEditTarefa(values.name, values.price, values.date);
-        onEdit();
+        try {
+            await onEditTarefa(values.name, values.price, values.date)
+            onEdit()
+        } catch (error) {
+            if (error.response && error.response.status === 409) {
+                form.setError('name', {
+                    message: 'Esse nome de tarefa já está em uso. Tente outro.',
+                });
+            } else {
+                console.error('Erro ao enviar os dados:', error);
+            }
+        }
     }
 
     return (
@@ -104,7 +115,16 @@ export function EdtForm({ tarefa, onEdit, onEditTarefa}) {
                         </FormItem>
                     )}
                 />
-                <Button type="submit">Editar</Button>
+                <div className="flex gap-1">
+                    <Button type="submit" className="w-[65px] box-border px-4 py-2" onClick={async () => {
+                        await api.put(`/tarefas/${tarefa.id}`, {
+                            nome: "YOJWAHFXPBCYGBQBNTBP",
+                            custo: tarefa.custo,
+                            data: tarefa.data ? format(new Date(tarefa.data), "dd/MM/yyyy") : null,
+                        })
+                    }}>Editar</Button>
+                    <Button type="button" variant="outline" onClick={onEdit} className="w-[65px] box-border px-4 py-2">Cancelar</Button>
+                </div>
             </form>
         </Form>
     );
