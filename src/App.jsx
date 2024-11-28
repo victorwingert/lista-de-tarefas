@@ -9,6 +9,8 @@ import { AddForm } from "./components/forms/registration-form.jsx"
 import { EdtForm } from "./components/forms/edt-form";
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { DialogDescription } from "@radix-ui/react-dialog";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
+import React from "react";
 
 export function App() {
   const [openAdd, setOpenAdd] = useState(false);
@@ -16,7 +18,7 @@ export function App() {
   const [openDelete, setOpenDelete] = useState(false);
   const [tarefas, setTarefas] = useState([]);
   const [tarefaAtual, setTarefaAtual] = useState(null);
-  
+
   const handleCloseDialog = () => {
     setOpenAdd(false)
     setOpenEdt(false)
@@ -80,55 +82,112 @@ export function App() {
     getTarefas()
   }, [])
 
+  const onDragEnd = async (result) => {
+    if (!result.destination) {
+      return;
+    }
+
+    let sourceOrder = result.source.index;
+    let destinationOrder = result.destination.index;
+
+    const sourceTask = tarefas.find((tarefa) => tarefa.ordem === sourceOrder);
+    const destinationTask = tarefas.find((tarefa) => tarefa.ordem === destinationOrder);
+
+    if (sourceOrder === destinationOrder) {
+      return;
+    }
+
+    await api.patch(`/tarefas/${sourceTask.id}`, { ordem: -1 });
+    await api.patch(`/tarefas/${destinationTask.id}`, { ordem: -2 });
+
+    let temp = sourceOrder;
+    sourceOrder = destinationOrder;
+    destinationOrder = temp;
+
+    const updatedTarefas = tarefas.map((tarefa) =>
+      tarefa.id === sourceTask.id ? { ...tarefa, ordem: sourceOrder } :
+        tarefa.id === destinationTask.id ? { ...tarefa, ordem: destinationOrder } :
+          tarefa
+    );
+    setTarefas(updatedTarefas);
+
+    await api.patch(`/tarefas/${sourceTask.id}`, { ordem: sourceOrder });
+    await api.patch(`/tarefas/${destinationTask.id}`, { ordem: destinationOrder });
+
+    await getTarefas()
+  }
+
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-4">
       <h1 className="text-3xl font-bold">Tarefas</h1>
 
-      <div className="border-2 border-viridian rounded-lg">
+      <div className="border-2 border-viridian rounded-lg p-2">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-center text-white bg-viridian rounded-tl">ID</TableHead>
+              <TableHead className="text-center text-white bg-viridian">ID</TableHead>
               <TableHead className="text-center font-bold text-white bg-viridian">Nome</TableHead>
               <TableHead className="text-center font-bold text-white bg-viridian">Custo</TableHead>
               <TableHead className="text-center font-bold text-white bg-viridian">Data Limite</TableHead>
               <TableHead className="text-center font-bold text-white bg-viridian">Ordem</TableHead>
-              <TableHead className="text-center w-10 text-white bg-viridian rounded-tr"></TableHead>
+              <TableHead className="text-center w-10 text-white bg-viridian"></TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
-            {tarefas
-              .sort((a, b) => a.ordem - b.ordem)
-              .map((tarefa) => (
-                <TableRow key={tarefa.id} className={`border-y-2 border-viridian text-center ${tarefa.custo >= 1000 ? 'bg-cambridge-blue hover:bg-cambridge-blue/80' : 'bg-azure-web hover:bg-azure-web/80'}`} >
-                  <TableCell className={`text-center font-bold ${tarefa.ordem === tarefas.length ? 'rounded-bl-sm' : ''}`}>{tarefa.id}</TableCell>
-                  <TableCell className="text-center">{tarefa.nome}</TableCell>
-                  <TableCell className="text-center">{tarefa.custo}</TableCell>
-                  <TableCell className="text-center">{tarefa.data}</TableCell>
-                  <TableCell className="text-center">{tarefa.ordem}</TableCell>
-                  <TableCell className={`${tarefa.ordem === tarefas.length ? 'rounded-br-sm' : ''}`}>
-                    <div className="flex justify-center items-center gap-3">
-                      <div className="flex justify-center items-center gap-1">
-                        <Button className="h-8 w-8 rounded-full bg-redwood hover:bg-redwood hover:bg-opacity-80" onClick={() => { handleMoveUp(tarefa) }} disabled={tarefa.ordem === 1}>
-                          <ArrowUpIcon></ArrowUpIcon>
-                        </Button>
-                        <Button className="h-8 w-8 rounded-full bg-redwood hover:bg-redwood hover:bg-opacity-80" onClick={() => { handleMoveDown(tarefa) }} disabled={tarefa.ordem === tarefas.length}>
-                          <ArrowDown></ArrowDown>
-                        </Button>
-                      </div>
-                      <div className="flex justify-center items-center gap-1">
-                        <Button className="h-8 w-8 rounded-full bg-blue-gray hover:bg-blue-gray hover:bg-opacity-80" onClick={() => { setOpenEdt(true), handleEditClick(tarefa) }}>
-                          <Edit2Icon></Edit2Icon>
-                        </Button>
-                        <Button className="h-8 w-8 rounded-full bg-vermilion hover:bg-vermilion hover:bg-opacity-80" onClick={() => { setOpenDelete(true), handleEditClickDelete(tarefa) }}>
-                          <TrashIcon></TrashIcon>
-                        </Button>
-                      </div>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="tasks" type="list" direction="vertical">
+              {(provided) => (
+                <TableBody ref={provided.innerRef} {...provided.droppableProps}>
+                  <div className="p-2" />
+                  {tarefas
+                    .sort((a, b) => a.ordem - b.ordem)
+                    .map((tarefa, index) => (
+                      <React.Fragment key={tarefa.id}>
+                        <Draggable draggableId={tarefa.id.toString()} index={tarefa.ordem}>
+                          {(provided) => (
+                            <TableRow
+                              className={`shadow border-viridian text-center ${tarefa.custo >= 1000 ? 'bg-cambridge-blue hover:bg-cambridge-blue/80' : 'bg-azure-web hover:bg-azure-web/80'}`}
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                            >
+                              <TableCell className={`text-center font-bold`}>{tarefa.id}</TableCell>
+                              <TableCell className="text-center">{tarefa.nome}</TableCell>
+                              <TableCell className="text-center">{tarefa.custo}</TableCell>
+                              <TableCell className="text-center">{tarefa.data}</TableCell>
+                              <TableCell className="text-center">{tarefa.ordem}</TableCell>
+                              <TableCell className={``}>
+                                <div className="flex justify-center items-center gap-3">
+                                  <div className="flex justify-center items-center gap-1">
+                                    <Button className="h-8 w-8 rounded-full bg-redwood hover:bg-redwood hover:bg-opacity-80" onClick={() => { handleMoveUp(tarefa) }} disabled={tarefa.ordem === 1}>
+                                      <ArrowUpIcon />
+                                    </Button>
+                                    <Button className="h-8 w-8 rounded-full bg-redwood hover:bg-redwood hover:bg-opacity-80" onClick={() => { handleMoveDown(tarefa) }} disabled={tarefa.ordem === tarefas.length}>
+                                      <ArrowDown />
+                                    </Button>
+                                  </div>
+                                  <div className="flex justify-center items-center gap-1">
+                                    <Button className="h-8 w-8 rounded-full bg-blue-gray hover:bg-blue-gray hover:bg-opacity-80" onClick={() => { setOpenEdt(true), handleEditClick(tarefa) }}>
+                                      <Edit2Icon />
+                                    </Button>
+                                    <Button className="h-8 w-8 rounded-full bg-vermilion hover:bg-vermilion hover:bg-opacity-80" onClick={() => { setOpenDelete(true), handleEditClickDelete(tarefa) }}>
+                                      <TrashIcon />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </Draggable>
+                        <div className={`${tarefa.ordem === tarefas.length ? '' : 'p-2'}`} />
+
+                      </React.Fragment>
+                    ))}
+
+                  {provided.placeholder}
+                </TableBody>
+              )}
+            </Droppable>
+          </DragDropContext>
         </Table>
       </div>
 
