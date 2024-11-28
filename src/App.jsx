@@ -16,7 +16,7 @@ export function App() {
   const [openDelete, setOpenDelete] = useState(false);
   const [tarefas, setTarefas] = useState([]);
   const [tarefaAtual, setTarefaAtual] = useState(null);
-
+  
   const handleCloseDialog = () => {
     setOpenAdd(false)
     setOpenEdt(false)
