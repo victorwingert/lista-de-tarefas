@@ -87,39 +87,33 @@ export function App() {
   }, [])
 
   const onDragEnd = async (result) => {
-    if (!result.destination) {
-      return;
-    }
+    const sourceIndex = result.source.index;
+    const destinationIndex = result.destination.index;
 
-    let sourceOrder = result.source.index;
-    let destinationOrder = result.destination.index;
+    let updatedTarefas = Array.from(tarefas);
+
+    let temp = updatedTarefas[sourceIndex-1];
+    updatedTarefas[sourceIndex-1] = updatedTarefas[destinationIndex-2];
+    updatedTarefas[destinationIndex-2] = temp;
+    
+    const reorderedTarefas = updatedTarefas.map((tarefa, index) => ({
+      ...tarefa,
+      ordem: index + 1,
+    }));
+
+    setTarefas(reorderedTarefas);
 
     const sourceTask = tarefas.find((tarefa) => tarefa.ordem === sourceOrder);
     const destinationTask = tarefas.find((tarefa) => tarefa.ordem === destinationOrder);
-
-    if (sourceOrder === destinationOrder) {
-      return;
-    }
-
+    
     await api.patch(`/tarefas/${sourceTask.id}`, { ordem: -1 });
     await api.patch(`/tarefas/${destinationTask.id}`, { ordem: -2 });
 
-    let temp = sourceOrder;
-    sourceOrder = destinationOrder;
-    destinationOrder = temp;
-
-    const updatedTarefas = tarefas.map((tarefa) =>
-      tarefa.id === sourceTask.id ? { ...tarefa, ordem: sourceOrder } :
-        tarefa.id === destinationTask.id ? { ...tarefa, ordem: destinationOrder } :
-          tarefa
-    );
-    setTarefas(updatedTarefas);
-
-    await api.patch(`/tarefas/${sourceTask.id}`, { ordem: sourceOrder });
-    await api.patch(`/tarefas/${destinationTask.id}`, { ordem: destinationOrder });
+    await api.patch(`/tarefas/${sourceTask.id}`, { ordem: sourceIndex });
+    await api.patch(`/tarefas/${destinationTask.id}`, { ordem: destinationIndex });
 
     await getTarefas()
-  }
+  };
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-4">
