@@ -103,8 +103,8 @@ export function App() {
 
     setTarefas(reorderedTarefas);
 
-    const sourceTask = tarefas.find((tarefa) => tarefa.ordem === sourceOrder);
-    const destinationTask = tarefas.find((tarefa) => tarefa.ordem === destinationOrder);
+    const sourceTask = tarefas.find((tarefa) => tarefa.ordem === sourceIndex);
+    const destinationTask = tarefas.find((tarefa) => tarefa.ordem === destinationIndex);
     
     await api.patch(`/tarefas/${sourceTask.id}`, { ordem: -1 });
     await api.patch(`/tarefas/${destinationTask.id}`, { ordem: -2 });
