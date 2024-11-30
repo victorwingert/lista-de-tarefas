@@ -136,7 +136,6 @@ export function App() {
                 <TableHead className="text-center font-bold text-white bg-viridian">Nome</TableHead>
                 <TableHead className="text-center font-bold text-white bg-viridian">Custo</TableHead>
                 <TableHead className="text-center font-bold text-white bg-viridian">Data Limite</TableHead>
-                <TableHead className="text-center font-bold text-white bg-viridian">Ordem</TableHead>
                 <TableHead className="text-center w-10 text-white bg-viridian"></TableHead>
               </TableRow>
             </TableHeader>
@@ -161,7 +160,6 @@ export function App() {
                                 <TableCell className="text-center">{tarefa.nome}</TableCell>
                                 <TableCell className="text-center">{tarefa.custo}</TableCell>
                                 <TableCell className="text-center">{tarefa.data}</TableCell>
-                                <TableCell className="text-center">{tarefa.ordem}</TableCell>
                                 <TableCell className={``}>
                                   <div className="flex justify-center items-center gap-3">
                                     <div className="flex justify-center items-center gap-1">
